@@ -19,15 +19,17 @@ func main() {
 	app.HideVersion = true
 	app.EnableBashCompletion = true
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "command, c",
-			Usage: "execute given command",
+		cli.BoolFlag{
+			Name:  "help, h",
+			Usage: "show help",
 		},
 		cli.BoolFlag{
 			Name:  "version, v",
-			Usage: "print the version",
+			Usage: "show the version",
 		},
 	}
+	app.HideHelp = true
+	app.ArgsUsage = "command"
 	app.Usage = "Send notifications when a given command fails"
 	app.Action = func(c *cli.Context) {
 		action(c)
@@ -36,8 +38,16 @@ func main() {
 }
 
 func action(c *cli.Context) {
-	command := c.String("c")
-	cmd := exec.Command(command)
+	if !(c.Args().Present()) {
+		cli.ShowAppHelp(c)
+		return
+	}
+	var cmd *exec.Cmd
+	if len(c.Args()) == 1 {
+		cmd = exec.Command(c.Args().First())
+	} else {
+		cmd = exec.Command(c.Args().First(), c.Args().Tail()...)
+	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
