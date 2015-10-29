@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"github.com/codegangsta/cli"
+
+	"github.com/learnin/fail-notifier/plugin"
 )
 
 func main() {
@@ -42,6 +44,11 @@ func action(c *cli.Context) {
 		cli.ShowAppHelp(c)
 		return
 	}
+
+	// FIXME 使用する plugin は設定ファイルで定義するようにする
+	typeName := "plugin.Stdout"
+	p, _ := plugin.CreatePlugin(typeName)
+
 	var cmd *exec.Cmd
 	if len(c.Args()) == 1 {
 		cmd = exec.Command(c.Args().First())
@@ -56,18 +63,19 @@ func action(c *cli.Context) {
 	if err := cmd.Run(); err != nil {
 		if err2, ok := err.(*exec.ExitError); ok {
 			if s, ok := err2.Sys().(syscall.WaitStatus); ok {
-				println(fmt.Sprintf("command failed. exitStatus=%v stdout=%v stderr=%v", s.ExitStatus(), stdout.String(), stderr.String()))
+				// FIXME 文字列渡しではなく、exitStatus/stdout/stderrをもった構造体を渡すようにする
+				p.Notice(fmt.Sprintf("command failed. exitStatus=%v stdout=%v stderr=%v", s.ExitStatus(), stdout.String(), stderr.String()))
 				return
 			} else {
 				// Unix や Winodws とは異なり、 exec.ExitError.Sys() が syscall.WaitStatus ではないOSの場合
-				println(fmt.Sprintf("command failed. stdout=%v stderr=%v", stdout.String(), stderr.String()))
+				p.Notice(fmt.Sprintf("command failed. stdout=%v stderr=%v", stdout.String(), stderr.String()))
 				return
 			}
 		} else {
 			// may be returned for I/O problems.
-			println(fmt.Sprintf("command can't execute. err=%v", err))
+			p.Notice(fmt.Sprintf("command can't execute. err=%v", err))
 			return
 		}
 	}
-	println(stdout.String())
+	p.Notice(stdout.String())
 }
