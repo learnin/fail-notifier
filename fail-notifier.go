@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"syscall"
@@ -11,6 +13,12 @@ import (
 
 	"github.com/learnin/fail-notifier/plugin"
 )
+
+type config struct {
+	Plugins []interface{}
+}
+
+var plugins = map[string]*plugin.Plugin{}
 
 func main() {
 	app := cli.NewApp()
@@ -29,6 +37,7 @@ func main() {
 			Name:  "version, v",
 			Usage: "show the version",
 		},
+		// FIXME configファイル指定可能にする
 	}
 	app.HideHelp = true
 	app.ArgsUsage = "command"
@@ -45,9 +54,20 @@ func action(c *cli.Context) {
 		return
 	}
 
-	// FIXME 使用する plugin は設定ファイルで定義するようにする
-	typeName := "plugin.Stdout"
-	p, _ := plugin.CreatePlugin(typeName)
+	cfg, err := loadConfig("config.json")
+	if err != nil {
+		panic(err)
+	}
+	if len(cfg.Plugins) == 0 {
+		// FIXME
+		println("config error. no plugins")
+		return
+	}
+	if !setupPlugins(&cfg) {
+		// FIXME
+		println("config error. the plugin does not exist.")
+		return
+	}
 
 	var cmd *exec.Cmd
 	if len(c.Args()) == 1 {
@@ -64,18 +84,56 @@ func action(c *cli.Context) {
 		if err2, ok := err.(*exec.ExitError); ok {
 			if s, ok := err2.Sys().(syscall.WaitStatus); ok {
 				// FIXME 文字列渡しではなく、exitStatus/stdout/stderrをもった構造体を渡すようにする
-				p.Notice(fmt.Sprintf("command failed. exitStatus=%v stdout=%v stderr=%v", s.ExitStatus(), stdout.String(), stderr.String()))
+				notice(fmt.Sprintf("command failed. exitStatus=%v stdout=%v stderr=%v", s.ExitStatus(), stdout.String(), stderr.String()))
 				return
 			} else {
 				// Unix や Winodws とは異なり、 exec.ExitError.Sys() が syscall.WaitStatus ではないOSの場合
-				p.Notice(fmt.Sprintf("command failed. stdout=%v stderr=%v", stdout.String(), stderr.String()))
+				notice(fmt.Sprintf("command failed. stdout=%v stderr=%v", stdout.String(), stderr.String()))
 				return
 			}
 		} else {
 			// may be returned for I/O problems.
-			p.Notice(fmt.Sprintf("command can't execute. err=%v", err))
+			notice(fmt.Sprintf("command can't execute. err=%v", err))
 			return
 		}
 	}
-	p.Notice(stdout.String())
+	notice(stdout.String())
+}
+
+func loadConfig(path string) (config, error) {
+	var cfg config
+	cfgJson, err := ioutil.ReadFile(path)
+	if err != nil {
+		return cfg, err
+	}
+	if err := json.Unmarshal(cfgJson, &cfg); err != nil {
+		return cfg, err
+	}
+	return cfg, nil
+}
+
+func setupPlugins(cfg *config) bool {
+	for _, p := range cfg.Plugins {
+		p, ok := p.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		typeName, ok := p["name"].(string)
+		if !ok {
+			return false
+		}
+		typeName = "plugin." + typeName
+		pluginInstance, ok := plugin.CreatePlugin(typeName, p)
+		if !ok {
+			return false
+		}
+		plugins[typeName] = pluginInstance
+	}
+	return true
+}
+
+func notice(s string) {
+	for _, p := range plugins {
+		(*p).Notice(s)
+	}
 }

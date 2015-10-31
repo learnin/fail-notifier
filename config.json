@@ -1,0 +1,5 @@
+{
+	"plugins": [
+		{"name": "Stdout", "prefix": "=== NOTICE ===\n"}
+	]
+}
