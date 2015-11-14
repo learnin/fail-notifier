@@ -37,7 +37,11 @@ func main() {
 			Name:  "version, v",
 			Usage: "show the version",
 		},
-		// FIXME configファイル指定可能にする
+		cli.StringFlag{
+			Name:  "config, c",
+			Value: "config.json",
+			Usage: "specify the path to the configuration file",
+		},
 	}
 	app.HideHelp = true
 	app.ArgsUsage = "command"
@@ -54,7 +58,7 @@ func action(c *cli.Context) {
 		return
 	}
 
-	cfg, err := loadConfig("config.json")
+	cfg, err := loadConfig(c.String("config"))
 	if err != nil {
 		panic(err)
 	}
