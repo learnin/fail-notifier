@@ -1,5 +1,5 @@
 {
-	"plugins": [
-		{"name": "Stdout", "prefix": "=== NOTICE ===\n"}
-	]
+  "plugins": [
+    {"name": "Stdout", "prefix": "=== NOTICE ===\n"}
+  ]
 }
