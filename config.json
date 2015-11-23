@@ -1,5 +1,15 @@
 {
   "plugins": [
-    {"name": "Stdout", "prefix": "=== NOTICE ===\n"}
+    {"name": "Stdout", "prefix": "=== NOTICE ===\n"},
+    {
+      "name": "Smtp",
+      "host": "localhost",
+      "port": 1025,
+      "username": "",
+      "password": "",
+      "from": "ほげ <sender@example.org>",
+      "to": "ふー <receipt@example.org>",
+      "subject": "テストおおおおおお。あああいいいいんんんaいいう1234あああああああああああいいいいいいいいいいう"
+    }
   ]
 }
