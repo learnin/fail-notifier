@@ -26,18 +26,18 @@ type smtpConfig struct {
 }
 
 type smtpClient struct {
-	Host     string
-	Port     string
-	Username string
-	Password string
+	host     string
+	port     string
+	username string
+	password string
 	client   *smtp.Client
 }
 
 type mail struct {
-	From    string
-	To      string
-	Subject string
-	Body    string
+	from    string
+	to      string
+	subject string
+	body    string
 }
 
 // you should define your plugin struct name of plugin file name.
@@ -49,10 +49,10 @@ type Smtp struct {
 // you should implement Plugin interface.
 func (smtp *Smtp) Notice(s string) {
 	smtpClient := smtpClient{
-		Host:     smtp.smtpConfig.host,
-		Port:     smtp.smtpConfig.port,
-		Username: smtp.smtpConfig.username,
-		Password: smtp.smtpConfig.password,
+		host:     smtp.smtpConfig.host,
+		port:     smtp.smtpConfig.port,
+		username: smtp.smtpConfig.username,
+		password: smtp.smtpConfig.password,
 	}
 	err := smtpClient.connect()
 	if err != nil {
@@ -65,10 +65,10 @@ func (smtp *Smtp) Notice(s string) {
 	}()
 
 	smtpClient.sendMail(mail{
-		From:    smtp.smtpConfig.from,
-		To:      smtp.smtpConfig.to,
-		Subject: smtp.smtpConfig.subject,
-		Body:    s,
+		from:    smtp.smtpConfig.from,
+		to:      smtp.smtpConfig.to,
+		subject: smtp.smtpConfig.subject,
+		body:    s,
 	})
 }
 
@@ -109,16 +109,16 @@ func init() {
 }
 
 func (c *smtpClient) connect() error {
-	client, err := smtp.Dial(fmt.Sprintf("%s:%s", c.Host, c.Port))
+	client, err := smtp.Dial(fmt.Sprintf("%s:%s", c.host, c.port))
 	if err != nil {
 		return err
 	}
 	if err := client.Hello("localhost"); err != nil {
 		return err
 	}
-	if c.Username != "" {
+	if c.username != "" {
 		if ok, _ := client.Extension("AUTH"); ok {
-			if err := client.Auth(smtp.PlainAuth("", c.Username, c.Password, c.Host)); err != nil {
+			if err := client.Auth(smtp.PlainAuth("", c.username, c.password, c.host)); err != nil {
 				return err
 			}
 		}
@@ -146,15 +146,15 @@ func (c *smtpClient) sendMail(m mail) error {
 	if err != nil {
 		return err
 	}
-	if match := r.FindStringSubmatch(m.From); match != nil {
+	if match := r.FindStringSubmatch(m.from); match != nil {
 		isNameAddrFrom = true
 		fromName = match[1]
 		envelopeFrom = match[2]
 	} else {
-		envelopeFrom = m.From
+		envelopeFrom = m.from
 	}
 	c.client.Mail(envelopeFrom)
-	if err := c.client.Rcpt(m.To); err != nil {
+	if err := c.client.Rcpt(m.to); err != nil {
 		return err
 	}
 	w, err := c.client.Data()
@@ -172,16 +172,16 @@ func (c *smtpClient) sendMail(m mail) error {
 		headerFrom = envelopeFrom
 	}
 
-	subject, err := encodeHeader(m.Subject)
+	subject, err := encodeHeader(m.subject)
 	if err != nil {
 		return err
 	}
-	body, err := encodeToJIS(m.Body + "\r\n")
+	body, err := encodeToJIS(m.body + "\r\n")
 	if err != nil {
 		return err
 	}
 	msg := "From: " + headerFrom + "\r\n" +
-		"To: " + m.To + "\r\n" +
+		"To: " + m.to + "\r\n" +
 		"Subject:" + subject +
 		"Date: " + time.Now().Format(time.RFC1123Z) + "\r\n" +
 		"MIME-Version: 1.0\r\n" +
