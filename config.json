@@ -10,6 +10,10 @@
       "from": "ほげ <sender@example.org>",
       "to": "ふー <receipt@example.org>",
       "subject": "テストおおおおおお。あああいいいいんんんaいいう1234あああああああああああいいいいいいいいいいう"
+    },
+    {
+      "name": "File",
+      "path": "./hoge.log"
     }
   ]
 }
