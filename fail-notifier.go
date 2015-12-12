@@ -101,7 +101,6 @@ func action(c *cli.Context) {
 			return
 		}
 	}
-	notice(stdout.String())
 }
 
 func loadConfig(path string) (config, error) {
