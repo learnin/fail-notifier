@@ -14,6 +14,9 @@
     {
       "name": "File",
       "path": "./hoge.log"
+    },
+    {
+      "name": "Syslog"
     }
   ]
 }
