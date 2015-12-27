@@ -74,10 +74,11 @@ func action(c *cli.Context) {
 	}
 
 	var cmd *exec.Cmd
+	command := c.Args().First()
 	if len(c.Args()) == 1 {
-		cmd = exec.Command(c.Args().First())
+		cmd = exec.Command(command)
 	} else {
-		cmd = exec.Command(c.Args().First(), c.Args().Tail()...)
+		cmd = exec.Command(command, c.Args().Tail()...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -88,16 +89,16 @@ func action(c *cli.Context) {
 		if err2, ok := err.(*exec.ExitError); ok {
 			if s, ok := err2.Sys().(syscall.WaitStatus); ok {
 				// FIXME 文字列渡しではなく、exitStatus/stdout/stderrをもった構造体を渡すようにする
-				notice(fmt.Sprintf("command failed. exitStatus=%v stdout=%v stderr=%v", s.ExitStatus(), stdout.String(), stderr.String()))
+				notice(fmt.Sprintf("%s failed. exitStatus=%v stdout=%v stderr=%v", command, s.ExitStatus(), stdout.String(), stderr.String()))
 				return
 			} else {
 				// Unix や Winodws とは異なり、 exec.ExitError.Sys() が syscall.WaitStatus ではないOSの場合
-				notice(fmt.Sprintf("command failed. stdout=%v stderr=%v", stdout.String(), stderr.String()))
+				notice(fmt.Sprintf("%s failed. stdout=%v stderr=%v", command, stdout.String(), stderr.String()))
 				return
 			}
 		} else {
 			// may be returned for I/O problems.
-			notice(fmt.Sprintf("command can't execute. err=%v", err))
+			notice(fmt.Sprintf("%s can't execute. err=%v", command, err))
 			return
 		}
 	}
