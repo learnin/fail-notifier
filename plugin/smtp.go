@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/learnin/go-send-mail-iso2022jp"
@@ -31,19 +32,22 @@ func (smtp *Smtp) Notice(s string) {
 		Password: smtp.smtpConfig.password,
 	}
 	if err := c.Connect(); err != nil {
-		println("SMTP接続に失敗しました。" + err.Error())
+		println(fmt.Sprintf("can't connect to smtp server(%s:%d): ", smtp.smtpConfig.host, smtp.smtpConfig.port) + err.Error())
 		return
 	}
 	defer func() {
 		c.Close()
 		c.Quit()
 	}()
-	c.SendMail(mail.Mail{
+	if err := c.SendMail(mail.Mail{
 		From:    smtp.smtpConfig.from,
 		To:      smtp.smtpConfig.to,
 		Subject: smtp.smtpConfig.subject,
 		Body:    s,
-	})
+	}); err != nil {
+		println("can't send mail: " + err.Error())
+		return
+	}
 }
 
 func (smtp *Smtp) SetPluginConfig(cfg interface{}) {
